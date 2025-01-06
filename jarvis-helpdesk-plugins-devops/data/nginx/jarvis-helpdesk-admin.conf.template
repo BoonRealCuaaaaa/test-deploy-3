@@ -1,0 +1,41 @@
+user  nginx;
+worker_processes  auto;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    upstream jarvis-admin {
+        server ${jarvis_admin_server}:${jarvis_admin_server_port};
+    }
+
+    server {
+        listen 80;
+
+        server_name ${server_name};
+
+        location ~ /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443 ssl;
+        ssl_certificate     /etc/letsencrypt/live/jarvis-admin.shop/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/jarvis-admin.shop/privkey.pem;
+        server_name jarvis-admin.shop;
+        root /var/www/html;
+        index index.php index.html index.htm;
+
+        location / {
+            proxy_pass http://jarvis-admin;
+        }
+    }
+}
+

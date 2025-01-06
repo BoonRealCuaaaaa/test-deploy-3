@@ -1,0 +1,110 @@
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: jarvis_helpdesk_plugins_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+
+  nginx-jarvis-helpdesk-admin:
+    image: nginx:latest
+    volumes:
+      - ./data/nginx/jarvis-helpdesk-admin.conf.template:/etc/nginx/nginx.conf.template
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+    env_file:
+      - ./.env.nginx
+    entrypoint: >
+      /bin/bash -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+  nginx-jarvis-helpdesk-plugin-api:
+    image: nginx:latest
+    volumes:
+      - ./data/nginx/jarvis-helpdesk-plugin-api.conf.template:/etc/nginx/nginx.conf.template
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+    env_file:
+      - ./.env.nginx
+    entrypoint: >
+      /bin/bash -c " envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+  nginx-jarvis-helpdesk-ai-module:
+    image: nginx:latest
+    volumes:
+      - ./data/nginx/jarvis-helpdesk-ai-module.conf.template:/etc/nginx/nginx.conf.template
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+    env_file:
+      - ./.env.nginx
+    entrypoint: >
+      /bin/bash -c " envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+  jarvis-helpdesk-admin:
+    build:
+      context: ../jarvis-helpdesk-plugins
+      dockerfile: Dockerfile
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+    ports:
+      - "8888:8888"
+    env_file:
+      - ./.env.admin
+
+  jarvis-helpdesk-plugin-api:
+    build:
+      context: ../jarvis-helpdesk-plugin-api
+      dockerfile: Dockerfile
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+    env_file:
+      - ./.env.plugin-api
+    depends_on:
+      - postgres
+    expose:
+      - 5555
+
+  jarvis-helpdesk-ai-module:
+    build:
+      context: ../jarvis-helpdesk-ai-module
+      dockerfile: Dockerfile
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+    env_file: ./.env.ai-module
+    expose:
+      - 5502
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    command: certonly --webroot -w /var/www/certbot --keep-until-expiring --email hiiback0608@gmail.com -d jarvis-admin.shop --agree-tos
+
+volumes:
+  postgres-data:
+
+networks:
+  jarvis-plugin-network:
+    driver: bridge
