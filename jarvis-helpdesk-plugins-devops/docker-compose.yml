@@ -13,22 +13,6 @@ services:
     networks:
       - jarvis-plugin-network
 
-  nginx-jarvis-helpdesk-admin:
-    image: nginx:latest
-    volumes:
-      - ./data/nginx/jarvis-helpdesk-admin.conf.template:/etc/nginx/nginx.conf.template
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-    ports:
-      - "80:80"
-      - "443:443"
-    restart: "unless-stopped"
-    networks:
-      - jarvis-plugin-network
-    env_file:
-      - ./.env.nginx
-    entrypoint: >
-      /bin/bash -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
 
   nginx-jarvis-helpdesk-plugin-api:
     image: nginx:latest
@@ -37,12 +21,38 @@ services:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
     restart: "unless-stopped"
+    ports:
+      - "8080:80"
+      - "8443:443"
     networks:
       - jarvis-plugin-network
     env_file:
       - ./.env.nginx
+    depends_on:
+      - certbot
+      - jarvis-helpdesk-plugin-api
     entrypoint: >
       /bin/bash -c " envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+  nginx-jarvis-helpdesk-admin:
+    image: nginx:latest
+    volumes:
+      - ./data/nginx/jarvis-helpdesk-admin.conf.template:/etc/nginx/nginx.conf.template
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    restart: "unless-stopped"
+    networks:
+      - jarvis-plugin-network
+    env_file:
+      - ./.env.nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - certbot
+      - jarvis-helpdesk-admin
+    entrypoint: >
+      /bin/bash -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
 
   nginx-jarvis-helpdesk-ai-module:
     image: nginx:latest
@@ -55,13 +65,25 @@ services:
       - jarvis-plugin-network
     env_file:
       - ./.env.nginx
+    ports:
+      - "9080:80"
+      - "9443:443"
+    depends_on:
+      - certbot
+      - jarvis-helpdesk-ai-module
+    expose:
+      - 5502
     entrypoint: >
       /bin/bash -c " envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+
+
 
   jarvis-helpdesk-admin:
     build:
       context: ../jarvis-helpdesk-plugins
       dockerfile: Dockerfile
+      args:
+        ADMIN_ENV_FILE: .env.admin
     restart: "unless-stopped"
     networks:
       - jarvis-plugin-network

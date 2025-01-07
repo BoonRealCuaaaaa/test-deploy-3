@@ -11,9 +11,9 @@ http {
     }
 
     server {
-        listen 8001;
+        listen 80;
 
-        server_name ${server_name};
+        server_name ${ai_domain};
 
         location ~ /.well-known/acme-challenge/ {
             root /var/www/certbot;
@@ -23,10 +23,10 @@ http {
     }
 
     server {
-        listen 8444 ssl;
-        ssl_certificate     /etc/letsencrypt/live/${server_name}/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/${server_name}/privkey.pem;
-        server_name ${server_name};
+        listen 443 ssl;
+        ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
+        server_name ${ai_domain};
 
         location /api {
             proxy_pass http://plugin-api;

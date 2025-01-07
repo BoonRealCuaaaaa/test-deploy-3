@@ -56,7 +56,11 @@ async function bootstrap() {
 
   app.useBodyParser('json', { limit: '50mb' });
   app.useBodyParser('urlencoded', { limit: '50mb', extended: true });
-  app.enableCors({ allowedHeaders: '*', origin: '*', credentials: true });
+  app.enableCors({
+    origin: 'https://jarvis-admin.shop',
+    allowedHeaders: ['Content-Type', 'Authorization'],  
+    credentials: true, 
+  });
 
   await app.listen(configService.getOrThrow('port'), () => {
     console.log(`\n🚀 App running on http://localhost:${configService.get('port')}`);

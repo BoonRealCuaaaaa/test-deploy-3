@@ -1,7 +1,12 @@
+
+
+ARG ADMIN_ENV_FILE
 # Stage 1: build ứng dụng
 FROM node:23.3.0 AS build-stage
 
 WORKDIR /jarvis-helpdesk-plugins
+
+COPY $ADMIN_ENV_FILE ./apps/admin/.env.production
 
 # Copy các file để cài dependencies
 COPY package.json yarn.lock ./
@@ -10,13 +15,11 @@ COPY packages ./packages
 # Cài đặt các package cần thiết
 RUN yarn install
 
-
-
 # Copy tất cả file qua bên máy ảo
 COPY . .
 
 # # Build ứng dụng
-RUN yarn workspace @jarvis-helpdesk-plugins/admin build
+RUN yarn workspace @jarvis-helpdesk-plugins/admin build --mode production
 
 # Stage 2: chạy ứng dụng bằng nginx
 FROM nginx:latest

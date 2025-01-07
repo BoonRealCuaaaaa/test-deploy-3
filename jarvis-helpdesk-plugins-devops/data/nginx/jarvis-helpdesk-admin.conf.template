@@ -5,6 +5,9 @@ events {
     worker_connections  1024;
 }
 
+## Lưu trong .env.nginx
+## frontend_domain=frontend.jarvis-admin.shop
+## domain=jarvis-admin.shop - để lưu ssl cert wildcard cho *.jarvis-admin.shop
 http {
     include /etc/nginx/mime.types;
     default_type  application/octet-stream;
@@ -16,7 +19,7 @@ http {
     server {
         listen 80;
 
-        server_name ${server_name};
+        server_name ${frontend_domain};
 
         location ~ /.well-known/acme-challenge/ {
             root /var/www/certbot;
@@ -27,9 +30,9 @@ http {
 
     server {
         listen 443 ssl;
-        ssl_certificate     /etc/letsencrypt/live/jarvis-admin.shop/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/jarvis-admin.shop/privkey.pem;
-        server_name jarvis-admin.shop;
+        ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
+        server_name ${frontend_domain};
         root /var/www/html;
         index index.php index.html index.htm;
 
