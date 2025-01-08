@@ -7,10 +7,6 @@ server {
 
     server_name ${ai_domain};
 
-    location ~ /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
     return 301 https://$host$request_uri;
 }
 

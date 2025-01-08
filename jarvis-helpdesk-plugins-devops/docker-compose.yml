@@ -34,8 +34,16 @@ services:
       - certbot
       - jarvis-helpdesk-plugins-api
     entrypoint: >
-      /bin/bash -c "for template in /etc/nginx/templates/*.template; do envsubst < $$template > /etc/nginx/conf.d/$$(basename $${template%.*}).conf; done && nginx -g 'daemon off;'"
-    # command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+      /bin/bash -c "
+      for template in /etc/nginx/templates/*.template; do
+        envsubst < $$template > /etc/nginx/conf.d/$$(basename $${template%.*}).conf;
+      done;
+      while :; do
+        sleep 6h & wait $${!};
+        nginx -s reload;
+      done &
+      nginx -g 'daemon off;'
+      "
 
   jarvis-helpdesk-admin:
     build:
@@ -73,13 +81,6 @@ services:
     env_file: ./.env.ai-module
     expose:
       - 5502
-
-  # certbot:
-  #   image: certbot/certbot
-  #   volumes:
-  #     - ./data/certbot/conf:/etc/letsencrypt
-  #     - ./data/certbot/www:/var/www/certbot
-  #   command: certonly --webroot -w /var/www/certbot --keep-until-expiring --email hiiback0608@gmail.com -d jarvis-admin.shop --agree-tos
 
   certbot:
     container_name: certbot
