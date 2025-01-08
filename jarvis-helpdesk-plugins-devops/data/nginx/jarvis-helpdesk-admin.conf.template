@@ -1,44 +1,28 @@
-user  nginx;
-worker_processes  auto;
-
-events {
-    worker_connections  1024;
+upstream jarvis-admin {
+    server ${jarvis_admin_server}:${jarvis_admin_server_port};
 }
 
-## Lưu trong .env.nginx
-## frontend_domain=frontend.jarvis-admin.shop
-## domain=jarvis-admin.shop - để lưu ssl cert wildcard cho *.jarvis-admin.shop
-http {
-    include /etc/nginx/mime.types;
-    default_type  application/octet-stream;
+server {
+    listen 80;
 
-    upstream jarvis-admin {
-        server ${jarvis_admin_server}:${jarvis_admin_server_port};
+    server_name ${frontend_domain};
+
+    location ~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
     }
 
-    server {
-        listen 80;
-
-        server_name ${frontend_domain};
-
-        location ~ /.well-known/acme-challenge/ {
-            root /var/www/certbot;
-        }
-
-        return 301 https://$host$request_uri;
-    }
-
-    server {
-        listen 443 ssl;
-        ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
-        server_name ${frontend_domain};
-        root /var/www/html;
-        index index.php index.html index.htm;
-
-        location / {
-            proxy_pass http://jarvis-admin;
-        }
-    }
+    return 301 https://$host$request_uri;
 }
 
+server {
+    listen 443 ssl;
+    ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
+    server_name ${frontend_domain};
+    root /var/www/html;
+    index index.php index.html index.htm;
+
+    location / {
+        proxy_pass http://jarvis-admin;
+    }
+}

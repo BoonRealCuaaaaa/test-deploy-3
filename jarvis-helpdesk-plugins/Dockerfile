@@ -1,12 +1,7 @@
-
-
-ARG ADMIN_ENV_FILE
 # Stage 1: build ứng dụng
 FROM node:23.3.0 AS build-stage
 
 WORKDIR /jarvis-helpdesk-plugins
-
-COPY $ADMIN_ENV_FILE ./apps/admin/.env.production
 
 # Copy các file để cài dependencies
 COPY package.json yarn.lock ./

@@ -1,6 +1,6 @@
 FROM node:23.3.0
 
-WORKDIR /app
+WORKDIR /jarvis-helpdesk-ai-module
 
 COPY package.json yarn.lock ./
 

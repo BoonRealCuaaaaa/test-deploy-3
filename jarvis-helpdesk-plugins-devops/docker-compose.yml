@@ -14,87 +14,44 @@ services:
       - jarvis-plugin-network
 
 
-  nginx-jarvis-helpdesk-plugin-api:
+  nginx:
     image: nginx:latest
     volumes:
-      - ./data/nginx/jarvis-helpdesk-plugin-api.conf.template:/etc/nginx/nginx.conf.template
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
+      - ./data/nginx/jarvis-helpdesk-plugin-api.conf.template:/etc/nginx/templates/jarvis-helpdesk-plugin-api.conf.template
+      - ./data/nginx/jarvis-helpdesk-admin.conf.template:/etc/nginx/templates/jarvis-helpdesk-admin.conf.template
+      - ./data/nginx/jarvis-helpdesk-ai-module.conf.template:/etc/nginx/templates/jarvis-helpdesk-ai-module.conf.template
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/www/certbot:/var/www/certbot
     restart: "unless-stopped"
-    ports:
-      - "8080:80"
-      - "8443:443"
-    networks:
-      - jarvis-plugin-network
-    env_file:
-      - ./.env.nginx
-    depends_on:
-      - certbot
-      - jarvis-helpdesk-plugin-api
-    entrypoint: >
-      /bin/bash -c " envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
-
-  nginx-jarvis-helpdesk-admin:
-    image: nginx:latest
-    volumes:
-      - ./data/nginx/jarvis-helpdesk-admin.conf.template:/etc/nginx/nginx.conf.template
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-    restart: "unless-stopped"
-    networks:
-      - jarvis-plugin-network
-    env_file:
-      - ./.env.nginx
     ports:
       - "80:80"
       - "443:443"
-    depends_on:
-      - certbot
-      - jarvis-helpdesk-admin
-    entrypoint: >
-      /bin/bash -c "envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
-
-  nginx-jarvis-helpdesk-ai-module:
-    image: nginx:latest
-    volumes:
-      - ./data/nginx/jarvis-helpdesk-ai-module.conf.template:/etc/nginx/nginx.conf.template
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-    restart: "unless-stopped"
     networks:
       - jarvis-plugin-network
     env_file:
       - ./.env.nginx
-    ports:
-      - "9080:80"
-      - "9443:443"
     depends_on:
       - certbot
-      - jarvis-helpdesk-ai-module
-    expose:
-      - 5502
+      - jarvis-helpdesk-plugins-api
     entrypoint: >
-      /bin/bash -c " envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
-
-
+      /bin/bash -c "for template in /etc/nginx/templates/*.template; do envsubst < $$template > /etc/nginx/conf.d/$$(basename $${template%.*}).conf; done && nginx -g 'daemon off;'"
+    # command: /bin/sh -c "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
 
   jarvis-helpdesk-admin:
     build:
       context: ../jarvis-helpdesk-plugins
       dockerfile: Dockerfile
       args:
-        ADMIN_ENV_FILE: .env.admin
+        - ENV_FILE_PATH=./.env.admin
     restart: "unless-stopped"
     networks:
       - jarvis-plugin-network
     ports:
       - "8888:8888"
-    env_file:
-      - ./.env.admin
 
-  jarvis-helpdesk-plugin-api:
+  jarvis-helpdesk-plugins-api:
     build:
-      context: ../jarvis-helpdesk-plugin-api
+      context: ../jarvis-helpdesk-plugins-api
       dockerfile: Dockerfile
     restart: "unless-stopped"
     networks:
@@ -117,12 +74,21 @@ services:
     expose:
       - 5502
 
+  # certbot:
+  #   image: certbot/certbot
+  #   volumes:
+  #     - ./data/certbot/conf:/etc/letsencrypt
+  #     - ./data/certbot/www:/var/www/certbot
+  #   command: certonly --webroot -w /var/www/certbot --keep-until-expiring --email hiiback0608@gmail.com -d jarvis-admin.shop --agree-tos
+
   certbot:
+    container_name: certbot
     image: certbot/certbot
+    restart: unless-stopped
     volumes:
       - ./data/certbot/conf:/etc/letsencrypt
       - ./data/certbot/www:/var/www/certbot
-    command: certonly --webroot -w /var/www/certbot --keep-until-expiring --email hiiback0608@gmail.com -d jarvis-admin.shop --agree-tos
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   postgres-data:
