@@ -1,20 +1,20 @@
 upstream jarvis-admin {
-    server ${jarvis_admin_server}:${jarvis_admin_server_port};
+    server ${JARVIS_ADMIN_SERVER}:${JARVIS_ADMIN_SERVER_PORT};
 }
 
 server {
     listen 80;
 
-    server_name ${frontend_domain};
+    server_name ${FRONTEND_DOMAIN};
 
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl;
-    ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
-    server_name ${frontend_domain};
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    server_name ${FRONTEND_DOMAIN};
     root /var/www/html;
     index index.php index.html index.htm;
 

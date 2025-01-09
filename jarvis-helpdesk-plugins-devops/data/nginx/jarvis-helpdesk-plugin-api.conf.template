@@ -1,11 +1,11 @@
 upstream plugin-api {
-    server ${plugin_api_domain}:${plugin_api_domain_port};
+    server ${PLUGIN_API_SERVER}:${PLUGIN_API_SERVER_PORT};
 }
 
 server {
     listen 80;
 
-    server_name ${api_domain};
+    server_name ${API_DOMAIN};
 
     location ~ /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -16,9 +16,9 @@ server {
 
 server {
     listen 443 ssl;
-    ssl_certificate     /etc/letsencrypt/live/${domain}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${domain}/privkey.pem;
-    server_name ${api_domain};
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    server_name ${API_DOMAIN};
 
     location / {
         proxy_pass http://plugin-api;
