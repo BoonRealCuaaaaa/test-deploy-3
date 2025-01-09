@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: jarvis_helpdesk_plugins_dev
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     ports:
@@ -13,37 +13,23 @@ services:
     networks:
       - jarvis-plugin-network
 
-
   nginx:
-    image: nginx:latest
-    volumes:
-      - ./data/nginx/jarvis-helpdesk-plugin-api.conf.template:/etc/nginx/templates/jarvis-helpdesk-plugin-api.conf.template
-      - ./data/nginx/jarvis-helpdesk-admin.conf.template:/etc/nginx/templates/jarvis-helpdesk-admin.conf.template
-      - ./data/nginx/jarvis-helpdesk-ai-module.conf.template:/etc/nginx/templates/jarvis-helpdesk-ai-module.conf.template
-      - /etc/letsencrypt:/etc/letsencrypt
-      - /var/www/certbot:/var/www/certbot
-    restart: "unless-stopped"
+    image: jonasal/nginx-certbot:latest
+    restart: unless-stopped
+    env_file:
+      - ./.env.nginx
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - ./data/nginx:/etc/nginx/templates
+      - nginx_secrets:/etc/letsencrypt 
+    depends_on:
+      - jarvis-helpdesk-plugins-api
+      - jarvis-helpdesk-admin
+      - jarvis-helpdesk-ai-module
     networks:
       - jarvis-plugin-network
-    env_file:
-      - ./.env.nginx
-    depends_on:
-      - certbot
-      - jarvis-helpdesk-plugins-api
-    entrypoint: >
-      /bin/bash -c "
-      for template in /etc/nginx/templates/*.template; do
-        envsubst < $$template > /etc/nginx/conf.d/$$(basename $${template%.*}).conf;
-      done;
-      while :; do
-        sleep 6h & wait $${!};
-        nginx -s reload;
-      done &
-      nginx -g 'daemon off;'
-      "
 
   jarvis-helpdesk-admin:
     build:
@@ -82,17 +68,9 @@ services:
     expose:
       - 5502
 
-  certbot:
-    container_name: certbot
-    image: certbot/certbot
-    restart: unless-stopped
-    volumes:
-      - ./data/certbot/conf:/etc/letsencrypt
-      - ./data/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-
 volumes:
   postgres-data:
+  nginx_secrets:
 
 networks:
   jarvis-plugin-network:
