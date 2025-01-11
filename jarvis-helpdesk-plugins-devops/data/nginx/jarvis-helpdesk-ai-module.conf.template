@@ -12,11 +12,11 @@ server {
 
 server {
     listen 443 ssl;
-    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/${AI_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${AI_DOMAIN}/privkey.pem;
     server_name ${AI_DOMAIN};
 
     location / {
-        proxy_pass http://ai-module;
+        proxy_pass http://${JARVIS_AI_UPSTREAM};
     }
 }

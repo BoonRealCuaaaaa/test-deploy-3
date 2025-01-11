@@ -1,20 +1,32 @@
-# Sử dụng Node.js phiên bản ổn định
-FROM node:23.3.0
+# Stage 1: Build application
+FROM node:23.3.0 AS builder
 
-# Đặt thư mục làm việc
+# Set working directory
 WORKDIR /jarvis-helpdesk-plugin-api
 
-# Copy các file về dependencies
+# Copy package files and install dependencies
 COPY package.json yarn.lock ./
-
-# Cài đặt dependencies (chỉ cài cho production để giảm kích thước image)
 RUN yarn install
 
-# Copy toàn bộ mã nguồn vào container
+# Copy the rest of the application files
 COPY . .
 
-# Build ứng dụng NestJS từ TypeScript thành JavaScript
+# Build the application
 RUN yarn build
 
-# Chạy lệnh migration và start server trong chế độ production
+# Stage 2: Run application
+FROM node:23.3.0
+
+# Set working directory
+WORKDIR /jarvis-helpdesk-plugin-api
+
+# Copy only the built application and necessary files from the builder stage
+COPY --from=builder /jarvis-helpdesk-plugin-api/dist ./dist
+COPY --from=builder /jarvis-helpdesk-plugin-api/package.json ./
+COPY --from=builder /jarvis-helpdesk-plugin-api/yarn.lock ./
+
+# Install only production dependencies
+RUN yarn install --production
+
+# Command to run the application
 CMD ["sh", "-c", "yarn migration:run:prod && yarn start:prod"]

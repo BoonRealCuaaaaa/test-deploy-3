@@ -1,4 +1,4 @@
-upstream plugin-api {
+upstream ${JARVIS_API_UPSTREAM} {
     server ${PLUGIN_API_SERVER}:${PLUGIN_API_SERVER_PORT};
 }
 
@@ -16,11 +16,11 @@ server {
 
 server {
     listen 443 ssl;
-    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${API_DOMAIN}/privkey.pem;
     server_name ${API_DOMAIN};
 
     location / {
-        proxy_pass http://plugin-api;
+        proxy_pass http://${JARVIS_API_UPSTREAM};
     }
 }
