@@ -1,17 +1,3 @@
-# FROM node:23.3.0
-
-# WORKDIR /jarvis-helpdesk-ai-module
-
-# COPY package.json yarn.lock ./
-
-# RUN yarn install 
-
-# COPY . .
-
-# RUN yarn build
-
-# CMD ["yarn", "start:prod"]
-
 # Stage 1: Build application
 FROM node:23.3.0 AS builder
 

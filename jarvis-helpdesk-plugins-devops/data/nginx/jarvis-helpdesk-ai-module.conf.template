@@ -1,4 +1,4 @@
-upstream ai-module {
+upstream ${JARVIS_AI_UPSTREAM} {
     server ${AI_MODULE}:${AI_MODULE_PORT};
 }
 
